@@ -20,6 +20,10 @@ const (
 	CodeExternalProviderFailure  = 1014
 	CodeSandboxDailyLimit        = 1015
 	CodeSandboxDisabled          = 1016
+	// Monitoramento: o saldo não cobre o mês dos CNPJs novos (402). Nada foi incluído.
+	CodeMonitoringInsufficientCredits = 1024
+	// Monitoramento: o plano gratuito acompanha até 10 CNPJs (402). Nada foi incluído.
+	CodeMonitoringFreePlanLimit = 1025
 )
 
 // Kind classifica a falha; compare com errors.Is(err, nextapi.ErrNotFound) etc.
@@ -52,7 +56,8 @@ var (
 // Error é toda falha do SDK. Use errors.As para ler Status, Code e RequestID.
 //
 // Code distingue casos com o mesmo status: 405 vale para "sem créditos" (1004, 1006) e para
-// "plano pago obrigatório" (1012, 1005).
+// "plano pago obrigatório" (1012, 1005); 402 vale para os créditos (1024) e o limite do plano gratuito (1025) do
+// monitoramento.
 type Error struct {
 	Kind       Kind
 	Status     int // 0 quando a requisição nem chegou à API
@@ -86,9 +91,9 @@ func kindOf(status, code int) Kind {
 	switch code {
 	case CodeTokenNotProvided, CodeTokenInvalid, CodeSandboxDisabled:
 		return KindAuthentication
-	case CodeMissingCredits, CodeLiveSearchMissingCredits:
+	case CodeMissingCredits, CodeLiveSearchMissingCredits, CodeMonitoringInsufficientCredits:
 		return KindInsufficientCredits
-	case CodeRequiresPaidPlan, CodeLiveSearchNotAllowed:
+	case CodeRequiresPaidPlan, CodeLiveSearchNotAllowed, CodeMonitoringFreePlanLimit:
 		return KindPaidPlanRequired
 	}
 	switch {

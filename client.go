@@ -23,7 +23,7 @@ import (
 )
 
 // Version do SDK.
-const Version = "0.2.0"
+const Version = "0.3.0"
 
 // DefaultBaseURL é o endereço da API, o mesmo para produção e sandbox (a API decide pela chave).
 const DefaultBaseURL = "https://api.nextapi.com.br"
@@ -51,6 +51,9 @@ type Client struct {
 	Municipios *MunicipiosService
 	Mercado    *MercadoService
 	Creditos   *CreditosService
+
+	// Monitoramentos: carteira de CNPJs acompanhados e eventos de mudança.
+	Monitoramentos *MonitoramentosService
 }
 
 // Option configura o cliente.
@@ -128,6 +131,7 @@ func NewClient(opts ...Option) (*Client, error) {
 	c.Municipios = &MunicipiosService{c}
 	c.Mercado = &MercadoService{c}
 	c.Creditos = &CreditosService{c}
+	c.Monitoramentos = &MonitoramentosService{c}
 	return c, nil
 }
 
@@ -158,6 +162,10 @@ func (c *Client) get(ctx context.Context, path string, out any) error {
 
 func (c *Client) post(ctx context.Context, path string, body, out any) error {
 	return c.do(ctx, http.MethodPost, path, body, out)
+}
+
+func (c *Client) delete(ctx context.Context, path string) error {
+	return c.do(ctx, http.MethodDelete, path, nil, nil)
 }
 
 func (c *Client) do(ctx context.Context, method, path string, body, out any) error {

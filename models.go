@@ -2,6 +2,8 @@
 
 package nextapi
 
+import "encoding/json"
+
 // Page é a página de resultados das rotas de listagem.
 type Page[T any] struct {
 	Page     int   `json:"page"`
@@ -378,6 +380,44 @@ type MercadoMunicipioResponse struct {
 	Economia  *MercadoMunicipioEconomia `json:"economia,omitempty"`
 	Empresas  *MercadoMunicipioEmpresas `json:"empresas,omitempty"`
 	Avisos    []string                  `json:"avisos,omitempty"`
+}
+
+type MonitoramentoEventoResponse struct {
+	Id          *string         `json:"id,omitempty"`
+	Tipo        *string         `json:"tipo,omitempty"`
+	Cnpj        *string         `json:"cnpj,omitempty"`
+	Fonte       *string         `json:"fonte,omitempty"`
+	Referencia  *string         `json:"referencia,omitempty"`
+	ObservadoEm *string         `json:"observadoEm,omitempty"`
+	Versao      *int            `json:"versao,omitempty"`
+	Dados       json.RawMessage `json:"dados,omitempty"`
+}
+
+type MonitoramentoEventosResponse struct {
+	Items         []MonitoramentoEventoResponse `json:"items,omitempty"`
+	ProximoCursor *string                       `json:"proximoCursor,omitempty"`
+	TemMais       *bool                         `json:"temMais,omitempty"`
+}
+
+type MonitoramentoInscricaoResponse struct {
+	Inscritos         []string `json:"inscritos,omitempty"`
+	Atualizados       []string `json:"atualizados,omitempty"`
+	Invalidos         []string `json:"invalidos,omitempty"`
+	NaoEncontrados    []string `json:"naoEncontrados,omitempty"`
+	TotalNaCarteira   *int     `json:"totalNaCarteira,omitempty"`
+	LimiteDaCarteira  *int     `json:"limiteDaCarteira,omitempty"`
+	CreditosPorCnpj   *int     `json:"creditosPorCnpj,omitempty"`
+	CreditosDebitados *int     `json:"creditosDebitados,omitempty"`
+	CreditosEstimados *int     `json:"creditosEstimados,omitempty"`
+}
+
+type MonitoramentoItemResponse struct {
+	Cnpj            *string  `json:"cnpj,omitempty"`
+	Eventos         []string `json:"eventos,omitempty"`
+	Cadencia        *string  `json:"cadencia,omitempty"`
+	Canais          []string `json:"canais,omitempty"`
+	MonitoradoDesde *string  `json:"monitoradoDesde,omitempty"`
+	LinhaDeBase     *string  `json:"linhaDeBase,omitempty"`
 }
 
 type MunicipioDetalhadoResponse struct {

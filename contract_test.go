@@ -36,6 +36,7 @@ type contractFile struct {
 		Query    map[string]string `json:"query"`
 		Body     json.RawMessage   `json:"body"`
 		Response json.RawMessage   `json:"response"`
+		Status   int               `json:"status"`
 	} `json:"cases"`
 	Errors []struct {
 		Status    int             `json:"status"`
@@ -126,6 +127,17 @@ func (o obj) i(k string) int {
 	}
 	return 0
 }
+func (o obj) strs(k string) []string {
+	v, ok := o[k].([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]string, len(v))
+	for i, x := range v {
+		out[i] = fmt.Sprint(x)
+	}
+	return out
+}
 func (o obj) f(k string) float64 { v, _ := o[k].(float64); return v }
 func (o obj) ip(k string) *int {
 	if _, ok := o[k]; !ok {
@@ -206,6 +218,14 @@ func invoke(c *Client, call string, raw []json.RawMessage) error {
 		_, err = c.Mercado.ObterIndicador(ctx, str, &IndicadorOptions{Inicio: o.s("inicio"), Fim: o.s("fim")})
 	case "creditos.consultar":
 		_, err = c.Creditos.Consultar(ctx)
+	case "monitoramentos.incluir":
+		_, err = c.Monitoramentos.Incluir(ctx, list, &IncluirOptions{Eventos: o.strs("eventos"), Cadencia: o.s("cadencia"), Canais: o.strs("canais")})
+	case "monitoramentos.listar":
+		_, err = c.Monitoramentos.Listar(ctx, lista)
+	case "monitoramentos.remover":
+		err = c.Monitoramentos.Remover(ctx, str)
+	case "monitoramentos.listarEventos":
+		_, err = c.Monitoramentos.ListarEventos(ctx, &EventosOptions{Cursor: o.s("cursor"), Tipo: o.s("tipo"), Desde: o.s("desde"), Limite: o.i("limite")})
 	default:
 		return fmt.Errorf("SDK sem %s", call)
 	}
@@ -239,7 +259,12 @@ func TestContractCases(t *testing.T) {
 	contract := loadContract(t)
 	for _, c := range contract.Cases {
 		t.Run(c.ID, func(t *testing.T) {
-			rt := &fakeRT{respond: func(int) (*http.Response, error) { return jsonResp(200, string(c.Response), nil), nil }}
+			rt := &fakeRT{respond: func(int) (*http.Response, error) {
+				if c.Status == http.StatusNoContent {
+					return &http.Response{StatusCode: 204, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(""))}, nil
+				}
+				return jsonResp(200, string(c.Response), nil), nil
+			}}
 			call := c.Call
 			if call == "" {
 				call = c.ID

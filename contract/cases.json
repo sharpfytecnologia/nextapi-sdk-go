@@ -1,5 +1,5 @@
 {
-  "$comment": "Contrato dos SDKs. Cada caso: a chamada canônica (recurso.método e argumentos) e a requisição exata que todo SDK deve montar. check.py garante que cada operação de openapi.json tem caso e que nenhum caso usa parâmetro inexistente. Os testes de cada SDK leem este arquivo.",
+  "$comment": "Contrato dos SDKs. Cada caso: a chamada canônica (recurso.método e argumentos) e a requisição exata que todo SDK deve montar. check.py garante que cada operação de openapi.json tem caso e que nenhum caso usa parâmetro inexistente. Os testes de cada SDK leem este arquivo. Caso com \"status\": 204 não tem corpo: a resposta é vazia e o método não devolve valor (null/None/void).",
   "cnpj": "11222333000181",
   "cases": [
     {
@@ -492,6 +492,181 @@
       "response": {
         "plan": {}
       }
+    },
+    {
+      "id": "monitoramentos.incluir",
+      "args": [
+        [
+          "11.222.333/0001-81",
+          "45997418000153"
+        ]
+      ],
+      "method": "POST",
+      "path": "/v1/monitoramentos",
+      "query": {},
+      "body": {
+        "cnpjs": [
+          "11222333000181",
+          "45997418000153"
+        ]
+      },
+      "response": {
+        "inscritos": [
+          "11222333000181",
+          "45997418000153"
+        ],
+        "atualizados": [],
+        "invalidos": [],
+        "naoEncontrados": [],
+        "totalNaCarteira": 2,
+        "limiteDaCarteira": 50000,
+        "creditosPorCnpj": 2,
+        "creditosDebitados": 4,
+        "creditosEstimados": null
+      }
+    },
+    {
+      "id": "monitoramentos.incluir.preferencias",
+      "call": "monitoramentos.incluir",
+      "args": [
+        [
+          "11222333000181"
+        ],
+        {
+          "eventos": [
+            "cadastro.alterado"
+          ],
+          "cadencia": "mensal",
+          "canais": [
+            "email",
+            "webhook"
+          ]
+        }
+      ],
+      "method": "POST",
+      "path": "/v1/monitoramentos",
+      "query": {},
+      "body": {
+        "cnpjs": [
+          "11222333000181"
+        ],
+        "eventos": [
+          "cadastro.alterado"
+        ],
+        "cadencia": "mensal",
+        "canais": [
+          "email",
+          "webhook"
+        ]
+      },
+      "response": {
+        "inscritos": [],
+        "atualizados": [
+          "11222333000181"
+        ],
+        "totalNaCarteira": 1,
+        "creditosPorCnpj": 2,
+        "creditosDebitados": 0
+      }
+    },
+    {
+      "id": "monitoramentos.listar",
+      "args": [
+        {
+          "page": 2,
+          "pageSize": 50
+        }
+      ],
+      "method": "GET",
+      "path": "/v1/monitoramentos",
+      "query": {
+        "page": "2",
+        "pageSize": "50"
+      },
+      "response": {
+        "page": 2,
+        "pageSize": 50,
+        "total": 51,
+        "items": [
+          {
+            "cnpj": "11222333000181",
+            "eventos": [
+              "cadastro.alterado",
+              "socios.alterado"
+            ],
+            "cadencia": "mensal",
+            "canais": [],
+            "monitoradoDesde": "2026-11-19T12:00:00Z",
+            "linhaDeBase": "2026-10-13T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "id": "monitoramentos.remover",
+      "args": [
+        "11.222.333/0001-81"
+      ],
+      "method": "DELETE",
+      "path": "/v1/monitoramentos/11222333000181",
+      "query": {},
+      "status": 204
+    },
+    {
+      "id": "monitoramentos.listarEventos",
+      "args": [
+        {
+          "cursor": "abc123",
+          "tipo": "cadastro.alterado,socios.alterado",
+          "desde": "2026-11-01T00:00:00Z",
+          "limite": 50
+        }
+      ],
+      "method": "GET",
+      "path": "/v1/monitoramentos/eventos",
+      "query": {
+        "cursor": "abc123",
+        "tipo": "cadastro.alterado,socios.alterado",
+        "desde": "2026-11-01T00:00:00Z",
+        "limite": "50"
+      },
+      "response": {
+        "items": [
+          {
+            "id": "0b6f9a52-4d0e-4c47-9a1f-6c1d2e3f4a5b",
+            "tipo": "cadastro.alterado",
+            "cnpj": "11222333000181",
+            "fonte": "receita",
+            "referencia": "2026-11-13T00:00:00Z",
+            "observadoEm": "2026-11-14T03:00:00Z",
+            "versao": 1,
+            "dados": {
+              "campos": [
+                {
+                  "campo": "situacaoCadastral",
+                  "antes": "ATIVA",
+                  "depois": "BAIXADA"
+                }
+              ]
+            }
+          }
+        ],
+        "proximoCursor": "def456",
+        "temMais": false
+      }
+    },
+    {
+      "id": "monitoramentos.listarEventos.semFiltro",
+      "call": "monitoramentos.listarEventos",
+      "args": [],
+      "method": "GET",
+      "path": "/v1/monitoramentos/eventos",
+      "query": {},
+      "response": {
+        "items": [],
+        "proximoCursor": null,
+        "temMais": false
+      }
     }
   ],
   "errors": [
@@ -596,6 +771,24 @@
       },
       "error": "server",
       "retryable": false
+    },
+    {
+      "status": 402,
+      "body": {
+        "status": "error",
+        "code": 1024,
+        "message": "Créditos insuficientes para monitorar os CNPJs."
+      },
+      "error": "insufficientCredits"
+    },
+    {
+      "status": 402,
+      "body": {
+        "status": "error",
+        "code": 1025,
+        "message": "O plano gratuito monitora até 10 CNPJs."
+      },
+      "error": "paidPlanRequired"
     }
   ],
   "invalid": [
@@ -777,6 +970,138 @@
         "../x"
       ],
       "reason": "tipo injetado no caminho"
+    },
+    {
+      "call": "monitoramentos.incluir",
+      "args": [
+        []
+      ],
+      "reason": "carteira: nenhum CNPJ"
+    },
+    {
+      "call": "monitoramentos.incluir",
+      "args": [
+        [
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181",
+          "11222333000181"
+        ]
+      ],
+      "reason": "carteira: mais de 100 CNPJs por chamada"
+    },
+    {
+      "call": "monitoramentos.incluir",
+      "args": [
+        [
+          "123"
+        ]
+      ],
+      "reason": "carteira: CNPJ inválido"
+    },
+    {
+      "call": "monitoramentos.remover",
+      "args": [
+        "../credits"
+      ],
+      "reason": "caminho injetado no lugar do CNPJ"
     }
   ],
   "valid": [
